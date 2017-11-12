@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>オプション</title>
+
+<style>
+
+.non-display{
+    display: none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<h3>城プロランチャー 設定</h3>
+
+
+<hr>
+
+<!--スクリーンショット-->
+<table width="100%">
+    <tr>
+        <td width="25%">スクリーンショット</td>
+        <td width="75%">
+            <table border="1" cellpadding="10" cellspacing="0"  bordercolor="#808080">
+                <tr>
+                    <td>
+                        <input type="checkbox" name="ss_resizeBeforeCapture" value="0" checked>
+                        撮る前に表示領域のサイズをデフォルトの1275x720にリサイズする
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p>
+                            保存形式　
+                            <input type="radio" name="ss_format" value="png" checked>
+                            PNG　  
+                            <input type="radio" name="ss_format" value="jpg">
+                            JPEG
+                        </p>
+                        <p>
+                            JPEGの品質(1～100) <input type="number" min="1" max="100" size = "5" name="ss_jpgQuality" value="95">
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p>保存するフォルダ名
+                        <input type="input" name="ss_folderName" value="御城プロジェクト_SS"></p>
+                        <p><small>Chrome準拠のダウンロードディレクトリにこの名前でフォルダを作り、
+                        その中にスクショを保存します</small></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <small>デフォルトのキー設定は「Ctrl + Shift + S」です。
+                        変更はChrome拡張機能のページの一番右下にある、
+                        「キーボードショートカット」から行ってください</small>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+<hr>
+
+
+<!--タイマー-->
+<table width="100%">
+    <tr>
+        <td width="25%">手動タイマー</td>
+        <td width="75%">
+            <table border="1" cellpadding="10" cellspacing="0" bordercolor="#808080">
+            
+            
+                <tr>
+                    <td>
+                        <p>【使い方説明】</p>
+                        <p>基本的にマウスホイールで操作します。「--:--:--」と表示されてるところでマウスホイールを転がすと時間表示が変化するので任意の時間に設定してください。
+                        また、左クリックすると一定値増加します。
+                        <br>開始ボタンはありません。２，３秒放置すると文字色が青色から白色に変わり自動でカウントダウンがスタートします。
+                        「R」と書いてあるボタンを押すとリセットされます。
+                        <br><small>カウントダウンが始まるとマウスホイールは効かなくなりますが、一回左クリックすると文字色が青くなって効くようになります
+                        <br />霊力タイマーの「回復まで」と書いてある所をクリックすると、霊力が全快までの表示と切り替わります(分単位で表示)
+                        
+                        </small>
+                    </td>
+                </tr>
+                
+                
+                <tr>
+                    <td>
+                        <table>
+                            <tr>
+                                【タイマー下部のコントロールエリアの説明】
+                            </tr>
+                            <tr>
+                                <td>
+                                    <img src="./images/timer_ctrl.png">　　
+                                </td>
+                                <td>
+                                        Focus ： 城プロのウインドウにフォーカスします。存在してなかったら新しく起動します
+                                    <br>
+                                        ＋ － ： 城プロの画面サイズを10％単位で拡大縮小します
+                                    <br>
+                                        Default ： 画面サイズをデフォルトの大きさに調整します
+                                    <br>
+                                        50％ 75％  ： デフォルトサイズに対してこの割合でサイズ変更します
+                                    <br>
+                                        SS ： スクリーンショットを撮ります
+                                    <br>
+                                        opt ： 設定画面を開きます
+                                    <br>
+                                        Full ： フルスクリーンモードで表示します
+                                    <br>
+                                        Mute ： 音声をミュートします。もう一度押すと戻ります
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                
+                
+                <tr>
+                    <td>
+                        <table><tr>
+                            <td>
+                                <p>表示するタイマーの数</p>
+                                <small>※タイマー再起動後に有効になります　　　　　</small>
+                            </td>
+                            <td>
+                                <p>探索：
+                                    <select name="timer_numofTansaku" value="">
+                                        <option value="0">無し</option>
+                                        <option value="1">1個</option>
+                                        <option value="2" selected>2個</option>
+                                        <option value="3">3個</option>
+                                    </select>
+                                </p>
+                                <p>修繕：
+                                    <select name="timer_numofSyuuzen" value="">
+                                        <option value="0">無し</option>
+                                        <option value="1">1個</option>
+                                        <option value="2" selected>2個</option>
+                                        <option value="3">3個</option>
+                                        <option value="4">4個</option>
+                                    </select>
+                                　　　
+                                </p>
+                                <p>築城：
+                                    <select name="timer_numofChikujo" value="">
+                                        <option value="0">無し</option>
+                                        <option value="1">1個</option>
+                                        <option value="2" selected>2個</option>
+                                        <option value="3">3個</option>
+                                        <option value="4">4個</option>
+                                    </select>
+                                </p>
+                                <p>霊力：
+                                    <select name="timer_numofReiryoku" value="">
+                                        <option value="0">無し</option>
+                                        <option value="1" selected>1個</option>
+                                    </select>
+                                </p>
+                                <p>汎用：
+                                    <select name="timer_numofHanyou" value="">
+                                        <option value="0" selected>無し</option>
+                                        <option value="1">1個</option>
+                                        <option value="2">2個</option>
+                                        <option value="3">3個</option>
+                                        <option value="4">4個</option>
+                                    </select>
+                                </p>
+                            </td>
+                        </tr></table>
+                    </td>
+                </tr>
+                
+                
+                <tr>
+                    <td>
+                        <input type="checkbox" name="timer_savePos" value="0" checked>
+                        タイマーの位置とサイズを記憶する (カウントダウン開始時に記憶されます)
+                    </td>
+                </tr>
+                
+                
+                <tr>
+                    <td>
+                        <input type="checkbox" name="timer_launchSameTime" value="0">
+                        城プロウインドウ作成時にタイマーも同時に起動する
+                    </td>
+                </tr>
+                
+                
+                <tr>
+                    <td>
+                        <small>
+                        タイマー起動のデフォルトのキー設定は「Ctrl + Shift + 1」です。 スクリーンショットと同じく、変更はChrome拡張機能のページの一番右下にある「キーボードショートカット」から行ってください
+                        </small>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>
+                        <input type="button" name="timer_advancedSetting" value="詳細設定">
+                        <small>
+                        タイマーの外観など、どうでもよさそうな設定はこちらで。別タブで開きます
+                        </small>
+                    </td>
+                </tr>
+                
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+<hr>
+
+<!--通知設定-->
+<table width="100%">
+    <tr>
+        <td width="25%">
+            <p>通知設定</p>
+            <p><small>タイマーのカウントが終わった時の通知に関する設定です</small></p>
+            <p><small>※音声と画像ファイルの指定は合計サイズが5MB以内に収まるようにしてください</small></p>
+        </td>
+        <td width="75%">
+            <table border="1" cellpadding="10" cellspacing="0" bordercolor="#808080">
+            
+            
+            
+                <tr>
+                    <td>
+                        <table><tr>
+                            <td>
+                                <p>通知の有無　　　　　　</p>
+                            </td>
+                            <td>
+                                <p>探索タイマー：
+                                    <input type="checkbox" name="timer_alertSettingTansaku" value="0" checked>
+                                    通知する　
+                                    <input type="checkbox" name="timer_soundEnable_t" value="0" checked>
+                                    音も鳴らす
+                                </p>
+                                <p>修繕タイマー：
+                                    <input type="checkbox" name="timer_alertSettingSyuuzen" value="0" checked>                                  
+                                    通知する　
+                                    <input type="checkbox" name="timer_soundEnable_s" value="0" checked>
+                                    音も鳴らす
+                                </p>
+                                <p>築城タイマー：
+                                    <input type="checkbox" name="timer_alertSettingChikujo" value="0" checked>                                  
+                                    通知する　
+                                    <input type="checkbox" name="timer_soundEnable_c" value="0" checked>
+                                    音も鳴らす
+                                </p>
+                                <p>霊力タイマー：
+                                    <input type="checkbox" name="timer_alertSettingReiryoku" value="0" checked>                                  
+                                    通知する　
+                                    <input type="checkbox" name="timer_soundEnable_r" value="0" checked>
+                                    音も鳴らす
+                                </p>
+                                <p>汎用タイマー：
+                                    <input type="checkbox" name="timer_alertSettingHanyou" value="0" checked>                                   
+                                    通知する　
+                                    <input type="checkbox" name="timer_soundEnable_h" value="0" checked>
+                                    音も鳴らす
+                                　　　　
+                                </p>
+                            </td>
+                            <td>
+                                <!--
+                                <p>
+                                    <input type="checkbox" name="timer_soundEnable" value="0" checked>
+                                    音も鳴らす
+                                </p>
+                                -->
+                                <p>音量(％)
+                                    <select name="timer_soundVolume" value="">
+                                        <option value="0">0</option>
+                                        <option value="1">10</option>
+                                        <option value="2">20</option>
+                                        <option value="3">30</option>
+                                        <option value="4">40</option>
+                                        <option value="4" selected>50</option>
+                                        <option value="4">60</option>
+                                        <option value="4">70</option>
+                                        <option value="4">80</option>
+                                        <option value="4">90</option>
+                                        <option value="4">100</option>
+                                    </select>
+                                </p>
+                            </td>
+                        </tr></table>
+                    </td>
+                </tr>
+                
+                
+                
+                <tr>
+                    <td>
+                        <table>
+                            <tr>
+                                <td>
+                                    <p>通知音声の指定</p>
+                                    <p><small>指定が無ければ太鼓の音になります　　　</small></p>
+                                </td>
+                                <td>
+                                    <p>
+                                        探索タイマー：
+                                        <input name="timer_soundFileName_t" type="text" size="14" value="" readonly="readonly">
+                                        <input type="button" name="timer_soundFileSelectBtn_t" value="ファイルを選択">
+                                        <input type="button" name="timer_soundFileRelease_t" value="解除">
+                                        <input type="file" name="timer_soundFileSelect_t" accept="audio/*" class="non-display">
+                                    </p>    
+                                    <p>
+                                        修繕タイマー：
+                                        <input name="timer_soundFileName_s" type="text" size="14" value="" readonly="readonly">
+                                        <input type="button" name="timer_soundFileSelectBtn_s" value="ファイルを選択">
+                                        <input type="button" name="timer_soundFileRelease_s" value="解除">
+                                        <input type="file" name="timer_soundFileSelect_s" accept="audio/*" class="non-display">
+                                    </p>
+                                    <p>
+                                        築城タイマー：
+                                        <input name="timer_soundFileName_c" type="text" size="14" value="" readonly="readonly">
+                                        <input type="button" name="timer_soundFileSelectBtn_c" value="ファイルを選択">
+                                        <input type="button" name="timer_soundFileRelease_c" value="解除">
+                                        <input type="file" name="timer_soundFileSelect_c" accept="audio/*" class="non-display">
+                                    </p>
+                                    <p>
+                                        霊力タイマー：
+                                        <input name="timer_soundFileName_r" type="text" size="14" value="" readonly="readonly">
+                                        <input type="button" name="timer_soundFileSelectBtn_r" value="ファイルを選択">
+                                        <input type="button" name="timer_soundFileRelease_r" value="解除">
+                                        <input type="file" name="timer_soundFileSelect_r" accept="audio/*" class="non-display">
+                                    </p>
+                                    <p>
+                                        汎用タイマー：
+                                        <input name="timer_soundFileName_h" type="text" size="14" value="" readonly="readonly">
+                                        <input type="button" name="timer_soundFileSelectBtn_h" value="ファイルを選択">
+                                        <input type="button" name="timer_soundFileRelease_h" value="解除">
+                                        <input type="file" name="timer_soundFileSelect_h" accept="audio/*" class="non-display">
+                                    　　　　　
+                                    </p>
+                                    
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>
+                        <table>
+                            <tr>
+                                <td>
+                                    <p>通知アイコンの画像指定　　</p>
+                                </td>
+                                <td>
+                                    <p>
+                                        <input name="timer_imageFileName_all" type="text" value="" readonly="readonly">
+                                        <input type="button" name="timer_imageFileSelectBtn_all" value="ファイルを選択">
+                                        <input type="button" name="timer_imageFileRelease_all" value="解除">
+                                        <span id="spanFileInput_img"><input type="file" name="timer_imageFileSelect_all" accept="image/*" class="non-display"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                
+                
+                <tr>
+                    <td>
+                        <table>
+                            <tr>
+                                <td>
+                                    <p>通知メッセージ　　　　</p>
+                                    
+                                </td>
+                                
+                                <td>
+                                    <p>
+                                        　　タイトル：
+                                        <input name="timer_notificationTitle" type="text" value="御城プロジェクト 通知">
+                                    </p>    
+                                    <p>
+                                        探索タイマー：
+                                        <input name="timer_message_t" type="text" size="40" value="探索が完了しました！ (第$number$部隊)">
+                                    </p>    
+                                    <p>
+                                        修繕タイマー：
+                                        <input name="timer_message_s" type="text" size="40" value="修繕が完了しました！ (修繕場$number$)">
+                                    </p>
+                                    <p>
+                                        築城タイマー：
+                                        <input name="timer_message_c" type="text" size="40" value="築城が完了しました！ (縄張場$number$)">
+                                    </p>
+                                    <p>
+                                        霊力タイマー：
+                                        <input name="timer_message_r" type="text" size="40" value="霊力が回復しました！">
+                                    </p>
+                                    <p>
+                                        汎用タイマー：
+                                        <input name="timer_message_h" type="text" size="40" value="カウントダウン終了 (汎用タイマー$number$)">
+                                    　　　
+                                    </p>
+                                    <p>
+                                        $number$ はタイマーの番号を表す変換記号です　　
+                                        <input type="button" name="timer_messageSetting_init" value="すべて初期化">
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                
+                
+                <tr>
+                    <td>
+                        通知のテスト　　　
+                        <input type="button" name="timer_notificationTest_t" value="探索">
+                        <input type="button" name="timer_notificationTest_s" value="修繕">
+                        <input type="button" name="timer_notificationTest_c" value="築城">
+                        <input type="button" name="timer_notificationTest_r" value="霊力">
+                        <input type="button" name="timer_notificationTest_h" value="汎用">                      
+                    </td>
+                </tr>
+                
+            </table>
+        </td>
+    </tr>
+</table>
+<hr>
+
+
+
+<!--その他-->
+<table width="100%">
+    <tr>
+        <td width="25%">ウインドウ・その他の設定</td>
+        <td width="75%">
+            <table border="1" cellpadding="10" cellspacing="0" bordercolor="#808080">
+                <tr>
+                    <td>
+                        <table>
+                            <tr>
+                                <td>
+                                    <p>ゲーム画面の位置調整</p>
+                                    <small>
+                                    ※通常は自動検出で問題ないと思います
+                                    </small>　　
+                                </td>
+                                <td>
+                                    <p>
+                                    <input type="radio" name="other_autoPos" value="" checked>
+                                    自動検出する
+                                    <br>
+                                    　└<input type="checkbox" name="other_enableScaling" value="" checked>
+                                    ウインドウリサイズ時の拡大縮小を有効にする (変更は再起動後有効)
+                                    </p>
+                                    <input type="radio" name="other_autoPos" value="">
+                                    スクロール値を指定して調整する　(拡大縮小は無効になります)
+                                    </p>
+                                    <p>
+                                    　└ 　右方向
+                                        <input type="number" min="0" max="1000" size = "5" name="other_scrollValueX" disabled value="6">
+                                        px
+                                        　　下方向
+                                        <input type="number" min="0" max="1000" size = "5" name="other_scrollValueY" disabled value="61">
+                                        px
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                    <table> 
+                        <tr>
+                            <td>
+                                <p>
+                                    <input type="checkbox" name="other_gameCenteringDisabled" >
+                                    ウインドウリサイズ時、縦方向へのゲーム画面中央化を行わない
+                                </p>
+                                <small>
+                                これをチェックすると、縦方向にウインドウ枠を引き伸ばした時にアナウンス等が見えるようになります
+                                （変更は再起動後有効です）<br>拡大縮小が無効になっているときは、この設定は意味が無いです
+                                </small>
+                            </td>
+                        </tr>
+                    </table>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>
+                    <table> 
+                        <tr>
+                            <td>
+                                <p>
+                                    <input type="checkbox" name="other_specifyShiroproWindowSize" value="">
+                                    起動時のウインドウサイズを指定する (%指定)　　
+                                </p>
+                            </td>
+                            <td>
+                                <input type="number" max="500" min="10" size="5" name ="other_ShiroproWindowSize" value="100" disabled> ％
+                            </td>
+                        </tr>
+                    </table>
+                    </td>
+                </tr>
+            
+                <tr>
+                    <td>
+                    <table> 
+                        <tr>
+                            <td>
+                                <p>
+                                    <input type="checkbox" name="other_specifyShiroproWindowPos" value="">
+                                    起動時のウインドウ位置を指定する　　
+                                </p>
+                            </td>
+                            <td>
+                                X (右方向) <input type="number" max="9999" min="0" size="5" name ="other_ShiroproWindowPosX" value="100" disabled> px
+                                　
+                                Y (下方向) <input type="number" max="9999" min="0" name ="other_ShiroproWindowPosY" value="100" disabled> px
+                            
+                            </td>
+                        </tr>
+                    </table>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>
+                        <p><input type="checkbox" name="other_usePopupMenu" value="0" checked>
+                        ポップアップメニューを表示する
+                        </p>
+                        <small>
+                        城プロ起動後に再度アイコンをクリックすると、ポップアップメニューが表示されます。
+                        この設定の変更は再起動後に有効です。
+                        </small>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>
+                        <p><input type="checkbox" name="other_showExitConfirmation" value="0">
+                        終了時、確認ダイアログを表示する (変更は再起動後有効)
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+<hr>
+
+
+
+<!--test デスクトップショートカット-->
+<table width="100%">
+    <tr>
+        <td width="25%">デスクトップショートカット</td>
+        <td width="75%">
+            <table cellpadding="15" cellspacing="0">
+                <tr>
+                    <td>
+                        <p>
+                            <a name="desktopLaunchWidgetLink" href="">このリンク</a>を開いて、[Chrome右上の設定ボタン]
+                            → [その他のツール] → [デスクトップに追加]<br/>
+                            をクリックし、「ウインドウとして開く」にチェックを入れて、「追加」ボタンを押してください。<br />
+                            これでデスクトップにショートカットが作成され、そこから起動することが出来るようになります。 
+                        </p>
+                    </td>
+                </tr>
+                
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+<hr>
+
+
+
+<!--バージョン情報-->
+<table width="100%">
+    <tr>
+        <td width="25%">バージョン情報</td>
+        <td width="75%">
+            <table cellpadding="15" cellspacing="0">
+                <tr>
+                    <td><div name = "verInfo">ver  . . <div></td>
+                </tr>
+                
+            </table>
+        </td>
+    </tr>
+</table>
+<hr>
+
+
+
+<script type="text/javascript" src="option.js" charset="utf-8"></script>
+<script type="text/javascript" src="fileSystem.js" charset="utf-8"></script>
+</body>
+</html>

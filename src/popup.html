@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>popup</title>
+    <style>
+    body {
+        min-width:175px;
+        overflow-x:hidden;
+    }
+    .close{
+        position: absolute;
+        right : 3px;
+        top :3px;
+    }
+    input.close{
+        padding-top: 0px;
+        padding-bottom: 0px;
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+    .text_displaySize{
+        padding: 0px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+    .buttons_size1{
+        padding: 0px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+    .buttons_size2{
+        padding: 0px;
+        margin-top: 5px;
+    }
+    input.size1 {
+        
+    }
+    input.size2 {
+        padding: 0px;
+        margin-top: 5px;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="close">
+        <small>
+            <input class="close" type=button name="close" value="×">
+        </small>
+    </div>
+    <p>城プロ起動中です</p>
+    
+    
+    <p><input type=button name="screenShot" value="スクショ撮る"></p>
+    <p><input type=button name="timer" value="手動タイマー"></p>
+    <p><input type=button name="focus" value="城プロにフォーカス"></p>
+    <p><input type=button name="sound_mute" value="音声をミュート"></p>  
+    <p><input type=button name="setting" value="設定"></p>
+    
+    <div class="text_displaySize">
+        <small>-画面サイズ-</small>
+    </div>
+    <div class="buttons_size1">
+        <input class="size1" type=button name="size_normal" value="標準">
+        <input class="size1" type=button name="size_up" value="大きく">
+        <input class="size1" type=button name="size_down" value="小さく">
+    </div>
+    <div class="buttons_size2">
+        <input class="size2" type=button name="size_half" value="50%">
+        <input class="size2" type=button name="size_75" value="75%">
+        <input class="size2" type=button name="size_150" value="150%">
+        <input class="size2" type=button name="size_full" value="Full">
+    <div>
+    
+        <!-- <small>-音声-</small> -->
+    <!-- </div> -->
+    <!-- <div class="buttons_size1"> -->
+        <!-- <input class="sound1" type=button name="sound_mute" value="ミュート"> -->
+    <!-- </div> -->
+
+    <!-- Load JavaScript-->
+    <script src="popup.js"></script>
+</body>
+</html>

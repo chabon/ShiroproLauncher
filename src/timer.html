@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>timer</title>
+    <style>
+        body {
+            overflow-x:hidden;
+            overflow-y:hidden;
+            cursor:default;
+            color:#ffffff;
+        }
+        span {
+            -webkit-user-select: none;
+        }
+        table, td, th {
+            border-collapse: collapse;
+            border: 0px #d09556 solid;
+            -webkit-user-select: none;
+        }
+        td.tansaku{
+            background-color: #383C3C;
+            font-size: small;
+        }
+        td.syuuzen{
+            background-color: #2D3446;
+            font-size: small;
+        }
+        td.chikujo{
+            background-color: #492741;
+            font-size: small;
+        }
+        td.hanyou{
+            background-color: #000b00;
+            font-size: small;
+        }
+        td.reiryoku{
+            background-color: #2D3446;
+            font-size: small;
+        }
+
+        td.tansaku_time{
+            background-color: #383C3C;
+            font-family: monospace;
+            font-size: large;
+            color:#888888;
+        }
+        td.syuuzen_time{
+            background-color: #2D3446;
+            font-family: monospace;
+            font-size: large;
+            color:#888888;
+        }
+        td.chikujo_time{
+            background-color: #492741;
+            font-family: monospace;
+            font-size: large;
+            color:#888888;      
+        }
+        td.hanyou_time{
+            background-color: #000b00;
+            font-family: monospace;
+            font-size: large;
+            color:#888888;      
+        }
+        td.reiryoku_value{
+            background-color: #2D3446;
+            font-family: monospace;
+            font-size: large;
+            color:#888888;      
+        }
+        td.reiryoku_time{
+            background-color: #2D3446;
+            font-family: monospace;
+            font-size: small;
+            color:#888888;      
+        }
+        td.reiryoku_time #reiryoku_remain_str{
+            font-size: x-small;
+            color:#888888;      
+        }
+
+        td.tansakuRbutton{
+            
+        }
+        
+        
+        tr.TrControl{
+            background-color: #555555;
+        }
+        div.control.left{
+            margin-left:2px;
+        }
+        div.control.right{
+            margin-right:3px;
+        }
+        div.control.top{
+            margin-top:2px;
+        }
+        div.control.bottom{
+            margin-bottom:3px;
+        }
+        input.ctrlButton{
+            width: 100%;
+            padding: 0px;
+        }
+        
+    </style>
+</head>
+
+<body marginwidth="0px" marginheight="0px">
+    
+    <table id="timerTable" width="100%" height="100%" border="0" frame="void">
+    
+    
+    
+        <!-- 探索 -->
+        <tr>
+            <!-- 探索2 -->
+            <td align="center" class="tansaku label">
+                <span name="label_t">探索2</span>
+            </td>
+            <td align="center" name="tansaku1_td" class="tansaku_time">
+                <span name="tansaku1_time">--</span><span name="tansaku1_colon">:</span><span name="tansaku1_time">--</span><span name="tansaku1_colon">:</span><span name="tansaku1_time">--</span>
+            </td>
+            <td class="tansaku">
+                <input class="tansakuRbutton" type="button"  value="R" name="tansaku1_button"></input>
+            </td>
+        </tr>
+            <!-- 探索3 -->
+            <td align="center" class="tansaku label">
+                <span name="label_t">探索3</span>
+            </td>
+            <td align="center" name="tansaku2_td" class="tansaku_time">
+                <span name="tansaku2_time">--</span><span name="tansaku2_colon">:</span><span name="tansaku2_time">--</span><span name="tansaku2_colon">:</span><span name="tansaku2_time">--</span>
+            </td>
+            <td class="tansaku">
+                <input type="button" value="R" name="tansaku2_button"></input>
+            </td>
+        <tr>
+            <!-- 探索4 -->
+            <td align="center" class="tansaku label">
+                <span name="label_t">探索4</span>
+            </td>
+            <td align="center" name="tansaku3_td" class="tansaku_time">
+                <span name="tansaku3_time">--</span><span name="tansaku3_colon">:</span><span name="tansaku3_time">--</span><span name="tansaku3_colon">:</span><span name="tansaku3_time">--</span>
+            </td>
+            <td class="tansaku">
+                <input type="button"  value="R" name="tansaku3_button"></input>
+            </td>
+        </tr>
+        
+        
+        
+        
+        <!-- 修繕 -->
+        <tr>
+            <!-- 修繕1 -->
+            <td align="center" class="syuuzen label">
+                <span name="label_s">修繕1</span>
+            </td>
+            <td align="center" name="syuuzen1_td" class="syuuzen_time">
+                <span name="syuuzen1_time">--</span><span name="syuuzen1_colon">:</span><span name="syuuzen1_time">--</span><span name="syuuzen1_colon">:</span><span name="syuuzen1_time">--</span>
+            </td>
+            <td class="syuuzen">
+                <input type="button"  value="R" name="syuuzen1_button"></input>
+            </td>
+        </tr>
+            <!-- 修繕2 -->
+            <td align="center" class="syuuzen label">
+                <span name="label_s">修繕2</span>
+            </td>
+            <td align="center" name="syuuzen2_td" class="syuuzen_time">
+                <span name="syuuzen2_time">--</span><span name="syuuzen2_colon">:</span><span name="syuuzen2_time">--</span><span name="syuuzen2_colon">:</span><span name="syuuzen2_time">--</span>
+            </td>
+            <td class="syuuzen">
+                <input type="button" value="R" name="syuuzen2_button"></input>
+            </td>
+        <tr>
+            <!-- 修繕3 -->
+            <td align="center" class="syuuzen label">
+                <span name="label_s">修繕3</span>
+            </td>
+            <td align="center" name="syuuzen3_td" class="syuuzen_time">
+                <span name="syuuzen3_time">--</span><span name="syuuzen3_colon">:</span><span name="syuuzen3_time">--</span><span name="syuuzen3_colon">:</span><span name="syuuzen3_time">--</span>
+            </td>
+            <td class="syuuzen">
+                <input type="button"  value="R" name="syuuzen3_button"></input>
+            </td>
+        </tr>
+        <tr>
+            <!-- 修繕4 -->
+            <td align="center" class="syuuzen label">
+                <span name="label_s">修繕4</span>
+            </td>
+            <td align="center" name="syuuzen4_td" class="syuuzen_time">
+                <span name="syuuzen4_time">--</span><span name="syuuzen4_colon">:</span><span name="syuuzen4_time">--</span><span name="syuuzen4_colon">:</span><span name="syuuzen4_time">--</span>
+            </td>
+            <td class="syuuzen">
+                <input type="button"  value="R" name="syuuzen4_button"></input>
+            </td>
+        </tr>
+        
+        
+        
+        <!-- 築城 -->
+        <tr>
+            <!-- 築城1 -->
+            <td align="center" class="chikujo label">
+                <span name="label_c">築城1</span>
+            </td>
+            <td align="center" name="chikujo1_td" class="chikujo_time">
+                <span name="chikujo1_time">--</span><span name="chikujo1_colon">:</span><span name="chikujo1_time">--</span><span name="chikujo1_colon">:</span><span name="chikujo1_time">--</span>
+            </td>
+            <td class="chikujo">
+                <input type="button"  value="R" name="chikujo1_button"></input>
+            </td>
+            
+        </tr>
+            <!-- 築城2 -->
+            <td align="center" class="chikujo label">
+                <span name="label_c">築城2</span>
+            </td>
+            <td align="center" name="chikujo2_td" class="chikujo_time">
+                <span name="chikujo2_time">--</span><span name="chikujo2_colon">:</span><span name="chikujo2_time">--</span><span name="chikujo2_colon">:</span><span name="chikujo2_time">--</span>
+            </td>
+            <td class="chikujo">
+                <input type="button" value="R" name="chikujo2_button"></input>
+            </td>
+        <tr>
+            <!-- 築城3 -->
+            <td align="center" class="chikujo label">
+                <span name="label_c">築城3</span>
+            </td>
+            <td align="center" name="chikujo3_td" class="chikujo_time">
+                <span name="chikujo3_time">--</span><span name="chikujo3_colon">:</span><span name="chikujo3_time">--</span><span name="chikujo3_colon">:</span><span name="chikujo3_time">--</span>
+            </td>
+            <td class="chikujo">
+                <input type="button"  value="R" name="chikujo3_button"></input>
+            </td>
+        </tr>
+        <tr>
+            <!-- 築城4 -->
+            <td align="center" class="chikujo label">
+                <span name="label_c">築城4</span>
+            </td>
+            <td align="center" name="chikujo4_td" class="chikujo_time">
+                <span name="chikujo4_time">--</span><span name="chikujo4_colon">:</span><span name="chikujo4_time">--</span><span name="chikujo4_colon">:</span><span name="chikujo4_time">--</span>
+            </td>
+            <td class="chikujo">
+                <input type="button"  value="R" name="chikujo4_button"></input>
+            </td>
+        </tr>
+        
+
+
+        <!-- 霊力 -->
+        <tr>
+            <td rowspan="2" align="center" class="reiryoku label">
+                <span name="label_r">霊力</span>
+            </td>
+            
+            <td  align="center" name="reiryoku_td" class="reiryoku reiryoku_value">
+                <span name="reiryoku_val">---</span><span name="reiryoku_slash">/</span><span name="reiryoku_val">---</span>
+            </td>
+
+            <td rowspan="2" class="reiryoku">
+                <input type="button"  value="R" name="reiryoku_button"></input>
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="1" align="center" name="reiryoku_td" class="reiryoku_time">
+                <span name="reiryoku_remain_str" id="reiryoku_remain_str">回復まで </span><span name="reiryoku_time">--</span><span name="reiryoku_colon">:</span><span name="reiryoku_time">--</span>
+            </td>
+        </tr>
+
+        
+        <!-- 汎用 -->
+        <tr>
+            <!-- 汎用1 -->
+            <td align="center" class="hanyou label">
+                <span name="label_h">汎用1</span>
+            </td>
+            <td align="center" name="hanyou1_td" class="hanyou_time">
+                <span name="hanyou1_time">--</span><span name="hanyou1_colon">:</span><span name="hanyou1_time">--</span><span name="hanyou1_colon">:</span><span name="hanyou1_time">--</span>
+            </td>
+            <td class="hanyou">
+                <input type="button"  value="R" name="hanyou1_button"></input>
+            </td>
+            
+        </tr>
+            <!-- 汎用2 -->
+            <td align="center" class="hanyou label">
+                <span name="label_h">汎用2</span>
+            </td>
+            <td align="center" name="hanyou2_td" class="hanyou_time">
+                <span name="hanyou2_time">--</span><span name="hanyou2_colon">:</span><span name="hanyou2_time">--</span><span name="hanyou2_colon">:</span><span name="hanyou2_time">--</span>
+            </td>
+            <td class="hanyou">
+                <input type="button" value="R" name="hanyou2_button"></input>
+            </td>
+        <tr>
+            <!-- 汎用3 -->
+            <td align="center" class="hanyou label">
+                <span name="label_h">汎用3</span>
+            </td>
+            <td align="center" name="hanyou3_td" class="hanyou_time">
+                <span name="hanyou3_time">--</span><span name="hanyou3_colon">:</span><span name="hanyou3_time">--</span><span name="hanyou3_colon">:</span><span name="hanyou3_time">--</span>
+            </td>
+            <td class="hanyou">
+                <input type="button"  value="R" name="hanyou3_button"></input>
+            </td>
+        </tr>
+        <tr>
+            <!-- 汎用4 -->
+            <td align="center" class="hanyou label">
+                <span name="label_h">汎用4</span>
+            </td>
+            <td align="center" name="hanyou4_td" class="hanyou_time">
+                <span name="hanyou4_time">--</span><span name="hanyou4_colon">:</span><span name="hanyou4_time">--</span><span name="hanyou4_colon">:</span><span name="hanyou4_time">--</span>
+            </td>
+            <td class="hanyou">
+                <input type="button"  value="R" name="hanyou4_button"></input>
+            </td>
+        </tr>
+        
+        
+
+        <!-- コントロール部分 -->
+        
+        
+        <!-- サイズ指定 -->     
+        <tr>
+            <table width="100%">
+                <tr class="TrControl">
+                    <td width="25%">
+                        <div  class = "control top left">
+                            <input class ="ctrlButton" type="button"  value="-" name="ctrl_sizedown"></input>
+                        </div>
+                    </td>
+                    <td width="25%">
+                        <div  class = "control top">
+                            <input class ="ctrlButton" type="button"  value="+" name="ctrl_sizeup"></input>
+                        </div>
+                    </td>
+                    <td width="50%">
+                        <div  class = "control top right">
+                            <input class ="ctrlButton" type="button"  value="Focus" name="ctrl_focus"></input>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </tr>
+        
+        <!-- 標準サイズ up down -->
+        <tr>
+            <table width="100%">
+                <tr class="TrControl">
+                    <td width="25%">
+                        <div  class = "control left">
+                            <input class ="ctrlButton" type="button"  value="50%" name="ctrl_size50"></input>
+                        </div>
+                    </td>
+                    <td width="25%">
+                        <div  class = "control">
+                            <input class ="ctrlButton" type="button"  value="75%" name="ctrl_size75"></input>
+                        </div>
+                    </td>
+                    <td width="50%">
+                        <div  class = "control right">
+                            <input class ="ctrlButton" type="button"  value="Default" name="ctrl_def"></input>
+                        </div>
+                    </td>
+                    
+                </tr>
+            </table>
+        </tr>
+        
+        
+        <!-- option スクショ Mute fullscreen  -->        
+        <tr>
+            <table width="100%">
+                <tr class="TrControl">
+                    <td width="25%">
+                        <div  class = "control bottom left">
+                            <input class ="ctrlButton" type="button"  value="Mute" name="ctrl_mute"></input>
+                        </div>
+                    </td>
+                    <td width="25%">
+                        <div  class = "control bottom">
+                            <input class ="ctrlButton" type="button"  value="Full" name="ctrl_fullsc"></input>
+                        </div>
+                    </td>
+                    <td width="25%">
+                        <div  class = "control bottom">
+                            <input class ="ctrlButton left" type="button"  value="opt" name="ctrl_opt"></input>
+                        </div>
+                    </td>
+                    <td width="25%">
+                        <div  class = "control bottom right">
+                            <input class ="ctrlButton" type="button"  value="SS" name="ctrl_ss"></input>
+                        </div>
+                    </td>
+                    
+                    
+                </tr>
+            </table>
+        </tr>
+        
+        
+    </table>
+    
+    
+    <script src="timer_reiryoku.js"></script>
+    <script src="timer.js"></script>
+</body>
+</html>
