@@ -1,6 +1,6 @@
 {
   "name": "城プロランチャー",
-  "version": "1.8.7",
+  "version": "1.8.8",
   "manifest_version": 2,
   "description": "御城プロジェクトをぴったりサイズの別窓で起動します",
   "background":{
