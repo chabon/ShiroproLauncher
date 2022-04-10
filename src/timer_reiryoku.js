@@ -505,12 +505,13 @@ function CReiryokuTimer(_category, _num){
     //      イベントリスナーの登録
     /* ---------------------------------------------------- */
     //mouseWheel event(reiryoku)
-    this.tdElement[0].addEventListener("mousewheel", this.mouseWheelEventListenerRegist_reiryoku() );
+    this.tdElement[0].addEventListener("wheel", this.mouseWheelEventListenerRegist_reiryoku() );
 
     //mouseWheel event(time)
     for(var i=0; i<this.timeElements.length ;i++){
-        this.timeElements[i].addEventListener("mousewheel", this.mouseWheelEventListenerRegist_time(i) );
+        this.timeElements[i].addEventListener("wheel", this.mouseWheelEventListenerRegist_time(i) );
     }
+    this.tdElement[1].addEventListener("wheel", () => { } );
 
     //button click event
     this.resetButtonElement[0].addEventListener("click", this.buttonClickEventRegist());

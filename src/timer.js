@@ -300,8 +300,10 @@ function Ctimer(_category, _num){
     //init event listener
     //mouseWheel event
     for(var i=0;i<3;i++){
-        this.timeElements[i].addEventListener("mousewheel", this.mouseWheelEventListenerRegist(i) );
+        this.timeElements[i].addEventListener("wheel", this.mouseWheelEventListenerRegist(i) );
     }
+    this.tdElement[0].addEventListener("wheel", () => { } );
+
     //button click event
     this.resetButtonElement[0].addEventListener("click", this.buttonClickEventRegist());
     //table data click event
