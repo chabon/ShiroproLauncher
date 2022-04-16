@@ -15,6 +15,7 @@ function Ctimer(_category, _num){
     this.readyCnt           = 0;
     this.td_clickCnt        = 0;
     this.time               = new Array(0, 0, 0); //[0]:hour,[1]:minute,[2]:second
+    this.endtime            = null
     this.timeElements       = document.getElementsByName(_category + _num + "_time"); //[0]:hour,[1]:minute,[2]:second
     this.colonElements      = document.getElementsByName(_category + _num + "_colon");
     this.resetButtonElement = document.getElementsByName(_category + _num + "_button");
@@ -37,7 +38,7 @@ function Ctimer(_category, _num){
         }
     }
     
-    Ctimer.prototype.countDown = function(){
+    Ctimer.prototype.countDown = function(currentTime){
         switch(this.state){
         case "stop":
             break;
@@ -49,26 +50,26 @@ function Ctimer(_category, _num){
                 this.state = "run";
                 this.readyCnt = 0;
                 this.td_clickCnt = 0;
+                var dt = new Date();
+                dt.setHours(dt.getHours() + this.time[0]);
+                dt.setMinutes(dt.getMinutes() + this.time[1]);
+                dt.setSeconds(dt.getSeconds() + this.time[2]);
+                this.endtime = dt.getTime();
             }
             break;
         case "run":
-            this.time[2] -= 1;
-            if(this.time[2]<0){
-                if(this.time[1] <= 0 && this.time[0] <= 0){ //end
-                    this.time[2] = 0;
-                    this.tdElement[0].style.color = fontColor_end;
-                    this.state = "end";
-                }
-                else{
-                    this.time[2] = 59;
-                    this.time[1] -= 1;
-                    if(this.time[1]<0){
-                        this.time[1] = 59;
-                        this.time[0] -= 1;
-                    }
-                }
+            var timeLeft = Math.round( (this.endtime - currentTime) / 1000 ) // millisecond to second
+            if(timeLeft <= 0){
+                this.time = [0, 0, 0];
+                this.tdElement[0].style.color = fontColor_end;
+                this.state = "end";
             }
-            
+            else{
+                this.time[0] = Math.floor( timeLeft / 3600 );
+                this.time[1] = Math.floor( (timeLeft % 3600) / 60 );
+                this.time[2] = timeLeft % 60;
+            }
+
             //draw
             this.drawTimeText();
             break;
@@ -380,20 +381,21 @@ if(numofReiryokuTimer > 0){
 var hSetInterval = 0;
 
 var countDownAll = function(){
+    var currentTime = Date.now();
     for(var i=0;i<numofTansakuTimer;i++){
-        tansakuTimer[i].countDown();
+        tansakuTimer[i].countDown(currentTime);
     }
     for(var i=0;i<numofSyuuzenTimer;i++){
-        syuuzenTimer[i].countDown();
+        syuuzenTimer[i].countDown(currentTime);
     }
     for(var i=0;i<numofChikujoTimer;i++){
-        chikujoTimer[i].countDown();
+        chikujoTimer[i].countDown(currentTime);
     }
     for(var i=0;i<numofHanyouTimer;i++){
-        hanyouTimer[i].countDown();
+        hanyouTimer[i].countDown(currentTime);
     }
     for(var i=0;i<numofReiryokuTimer;i++){
-        reiryokuTimer[i].countDown();
+        reiryokuTimer[i].countDown(currentTime);
     }
 }
 

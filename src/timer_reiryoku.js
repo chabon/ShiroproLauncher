@@ -21,11 +21,12 @@ function CReiryokuTimer(_category, _num){
     this.td_clickCnt        = 0;
 
     this.reiryoku           = new Array(40, 40); // ---/--- 
-    this.time               = new Array(0, 0);  // --:-- 
+    this.time               = new Array(0, 0);   // --:-- 
+    this.endTime            = null;
+    this.refillInterval     = new Array(5, 0);   // 霊力が1回復する時間 [0]:Minute, [1]:second
 
-    this.bShowTimeLeftForComplete = false;  // 完全回復までの残り時間を表示する
-
-    this.timeDisplayType    = 1; // 1:回復までを表示  2:全快までを表示
+    this.bShowTimeLeftForComplete = false;  // 完全回復までの残り時間を表示するかどうか
+    this.timeDisplayType    = 1;            // 1:回復までを表示  2:全快までを表示
     
     // elements
     this.reiryokuElemants   = document.getElementsByName("reiryoku_val"); 
@@ -44,9 +45,6 @@ function CReiryokuTimer(_category, _num){
     //      method 
     /* =================================================================== */
 
-    /* ---------------------------------------------------- */
-    //      取得
-    /* ---------------------------------------------------- */
     CReiryokuTimer.prototype.getClickIncValue = function(){
         var value = 10;
         if(localStorage.getItem("opt_timerAd_re_clickIncValue")){
@@ -55,15 +53,19 @@ function CReiryokuTimer(_category, _num){
         return Number(value);
     }
 
-    CReiryokuTimer.prototype.setRecoveryTime = function(){
-        this.time[0] = 5;   
-        this.time[1] = 0;   
+    CReiryokuTimer.prototype.loadRefillInterval = function(){
         if(localStorage.getItem("opt_timerAd_re_rcvTime_m")){
-            this.time[0] = Number( localStorage.getItem("opt_timerAd_re_rcvTime_m") );
+            this.refillInterval[0] = Number( localStorage.getItem("opt_timerAd_re_rcvTime_m") );
         }
         if(localStorage.getItem("opt_timerAd_re_rcvTime_s")){
-            this.time[1] = Number( localStorage.getItem("opt_timerAd_re_rcvTime_s") );
+            this.refillInterval[1] = Number( localStorage.getItem("opt_timerAd_re_rcvTime_s") );
         }
+    }
+
+    CReiryokuTimer.prototype.resetRefillTime = function(){
+        this.loadRefillInterval();
+        this.time[0] = this.refillInterval[0];
+        this.time[1] = this.refillInterval[1];
     }
 
     /* ---------------------------------------------------- */
@@ -98,18 +100,10 @@ function CReiryokuTimer(_category, _num){
                 }
                 else{
                     var reiryokuToFull = this.reiryoku[1] - this.reiryoku[0] - 1;
-                    var unitMin = 5;
-                    var unitSec = 0;
-                    if( localStorage.getItem("opt_timerAd_re_rcvTime_m") ){
-                        unitMin = localStorage.getItem("opt_timerAd_re_rcvTime_m");
-                    }
-                    if( localStorage.getItem("opt_timerAd_re_rcvTime_s") ){
-                        unitSec = localStorage.getItem("opt_timerAd_re_rcvTime_s");
-                    }
-                    var totalSec = reiryokuToFull * unitMin * 60 + reiryokuToFull * unitSec;
+                    var totalSec = reiryokuToFull * this.refillInterval[0] * 60 + reiryokuToFull * this.refillInterval[1];
                     totalSec += this.time[0] * 60 + this.time[1];
                     var hour = Math.floor( totalSec / 3600 );
-                    var min = Math.floor( (totalSec % 3600) / 60);
+                    var min  = Math.floor( (totalSec % 3600) / 60);
                     if(totalSec <= 0){
                         this.timeElements[0].innerText = "00";
                         this.timeElements[1].innerText = "00";
@@ -137,17 +131,19 @@ function CReiryokuTimer(_category, _num){
         }
     }
     
-    CReiryokuTimer.prototype.countDown = function(){
+    CReiryokuTimer.prototype.countDown = function(currentTime){
         switch(this.state){
         case "stop":
             break;
         case "ready":
             this.readyCnt += 1;
             if(this.readyCnt >= 3){
-                if(this.reiryoku[0] == this.reiryoku[1]){ 
+                if(this.reiryoku[0] >= this.reiryoku[1]){ 
                     this.stop(); 
                     break;
                 }
+                
+                // prepare
                 saveTimerPos();
                 this.state = "run";
                 this.updateTextColor();
@@ -155,27 +151,34 @@ function CReiryokuTimer(_category, _num){
                 this.td_clickCnt = 0;
                 localStorage.setItem("timer_re_prevReiryokuBeforeCount", this.reiryoku[0]);
                 localStorage.setItem("timer_re_maxReiryoku", this.reiryoku[1]);
+                this.loadRefillInterval();
+
+                // set endTime
+                var refillInterval_sec = this.refillInterval[0] * 60 + this.refillInterval[1];
+                var timeRequired = (this.reiryoku[1] - this.reiryoku[0] -1) * refillInterval_sec
+                                 + this.time[0] * 60 + this.time[1];  
+                var dt = new Date();
+                dt.setSeconds(dt.getSeconds() + timeRequired);
+                this.endtime = dt.getTime();
                 this.drawReiryoku();
             }
             break;
         case "run":
-            this.time[1] -= 1;
-            if(this.time[0] <= 0 && this.time[1] <= 0){
-                // 1霊力分のカウント終了
-                this.reiryoku[0] += 1;
-                this.time[0] = this.time[1] = 0;
-                if(this.reiryoku[0] >= this.reiryoku[1]){
-                    this.state = "end"; 
-                    this.updateTextColor();
-                }
-                else{
-                    this.setRecoveryTime();
-                }
+            var timeLeft = Math.round( (this.endtime - currentTime) / 1000 ) // millisecond to second
+            if(timeLeft <= 0){
+                this.time = [0, 0];
+                this.reiryoku[0] = this.reiryoku[1];
+                this.state = "end"; 
+                this.updateTextColor();
             }
-            else if(this.time[1] < 0){
-                this.time[1] = 59;
-                this.time[0] -= 1;
+            else{
+                var refillInterval_sec = this.refillInterval[0] * 60 + this.refillInterval[1];
+                var reiryokuLeft = Math.ceil( timeLeft / refillInterval_sec );
+                this.reiryoku[0] = this.reiryoku[1] - reiryokuLeft;
+                this.time[0] = Math.floor( (timeLeft % refillInterval_sec) / 60 );
+                this.time[1] = timeLeft % refillInterval_sec % 60;
             }
+
             //draw
             this.drawTimeText();
             this.drawReiryoku();
@@ -292,13 +295,10 @@ function CReiryokuTimer(_category, _num){
             if(timer.state != "ready"){ return; }
 
             // 霊力１の回復時間の取得
-            var rcvTime_m = localStorage.getItem("opt_timerAd_re_rcvTime_m")?
-            Number(localStorage.getItem("opt_timerAd_re_rcvTime_m") ): 5;
-            var rcvTime_s = localStorage.getItem("opt_timerAd_re_rcvTime_s")?
-            Number(localStorage.getItem("opt_timerAd_re_rcvTime_s") ): 0;
+            timer.loadRefillInterval();
 
             if(e.wheelDelta > 0){
-                if(timer.time[0] == rcvTime_m && timer.time[1] == rcvTime_s){
+                if(timer.time[0] == timer.refillInterval[0] && timer.time[1] == timer.refillInterval[1]){
                     // ピッタリ5:00でホイールアップした時は、０に
                     timer.time[0] = timer.time[1] = 0;
                     timer.time[1] = 0;
@@ -309,22 +309,19 @@ function CReiryokuTimer(_category, _num){
 
             if(i==0){
                 // 分表示部分
-                if(timer.time[i] > rcvTime_m){
-                    timer.time[0] = rcvTime_m;
-                    timer.time[1] = rcvTime_s;
+                if(timer.time[i] > timer.refillInterval[0]){
+                    timer.time[0] = timer.refillInterval[0];
+                    timer.time[1] = timer.refillInterval[1];
                 }
-                else if(timer.time[i] == rcvTime_m){
-                    if(timer.time[1] >= rcvTime_s){
-                        timer.time[0] = rcvTime_m;
-                        timer.time[1] = rcvTime_s;
+                else if(timer.time[i] == timer.refillInterval[0]){
+                    if(timer.time[1] >= timer.refillInterval[1]){
+                        timer.time[0] = timer.refillInterval[0];
+                        timer.time[1] = timer.refillInterval[1];
                     }
                 }
                 else if(timer.time[i] < 0){ 
-                    timer.time[0] = rcvTime_m; 
-                    timer.time[1] = rcvTime_s;
-                    // if(timer.time[1] >= rcvTime_s){
-                        // timer.time[1] = rcvTime_s;
-                    // }
+                    timer.time[0] = timer.refillInterval[0]; 
+                    timer.time[1] = timer.refillInterval[1];
                 }
             }else{
                 // 秒表示部分
@@ -333,10 +330,10 @@ function CReiryokuTimer(_category, _num){
                     timer.time[i] = 0;
                 }
                 else if(timer.time[i] < 0){
-                    if(timer.time[0] == rcvTime_m){timer.time[0] -= 1;}
+                    if(timer.time[0] == timer.refillInterval[0]){timer.time[0] -= 1;}
                     if(timer.time[0] < 0){
-                        timer.time[0] = rcvTime_m;   
-                        timer.time[1] = rcvTime_s;   
+                        timer.time[0] = timer.refillInterval[0];   
+                        timer.time[1] = timer.refillInterval[1];   
                     }
                     else{timer.time[i] = 59;}
                 }
@@ -379,7 +376,7 @@ function CReiryokuTimer(_category, _num){
 
             }
             // リカバリータイムをリセット
-            timer.setRecoveryTime();
+            timer.resetRefillTime();
 
             // カウントダウン準備
             if(timer.state == "ready"){
@@ -387,7 +384,7 @@ function CReiryokuTimer(_category, _num){
             }
             else if(timer.reiryoku[0] < timer.reiryoku[1] && clickPos_x < slashPosxMiddle){
                 // stop状態の時
-                timer.setRecoveryTime();
+                timer.resetRefillTime();
                 timer.ready();
             }
             else{
@@ -451,7 +448,7 @@ function CReiryokuTimer(_category, _num){
                         timer.reiryoku[0] = timer.reiryoku[1];
                     }
                 }
-                timer.setRecoveryTime();
+                timer.resetRefillTime();
                 timer.ready();
                 break;
             case "ready":
@@ -488,7 +485,7 @@ function CReiryokuTimer(_category, _num){
                     }
 
                 }
-                timer.setRecoveryTime();
+                timer.resetRefillTime();
                 timer.ready();
                 break;
             case "run":
