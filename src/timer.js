@@ -45,6 +45,8 @@ function Ctimer(_category, _num){
         case "ready":
             this.readyCnt += 1;
             if(this.readyCnt >= 3){
+                localStorage.setItem( "timer_prevTimeBeforeCount_" + this.category + "_" + this.num, 
+                    JSON.stringify(new Array(this.time[0], this.time[1], this.time[2])) );
                 saveTimerPos();
                 this.tdElement[0].style.color = fontColor_run;
                 this.state = "run";
@@ -223,6 +225,20 @@ function Ctimer(_category, _num){
     Ctimer.prototype.buttonClickEventRegist = function(){
         var timer = this;
         return function(){
+            if (timer.state == "stop"){
+                var prev = JSON.parse( localStorage.getItem("timer_prevTimeBeforeCount_" + timer.category + "_" + timer.num) );
+                if(prev != null){
+                    timer.time[0] = prev[0];
+                    timer.time[1] = prev[1];
+                    timer.time[2] = prev[2];
+                    timer.drawTimeText();
+                    timer.ready();
+                }
+                else {
+                    timer.stop();
+                }
+                return;
+            }
             timer.stop();
         }
     }

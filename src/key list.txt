@@ -1,4 +1,4 @@
-LocalStorage‚É•Û‘¶‚µ‚½ƒL[ƒŠƒXƒg
+LocalStorageï¿½É•Û‘ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Lï¿½[ï¿½ï¿½ï¿½Xï¿½g
 
 /* =================================================================== */
 //      app 
@@ -10,8 +10,9 @@ WindowObj    (chrome.window object)
 TimerWindowObj
 TimerRect   ( obj {left: top: width: height } )
 /* ---------------------------------------------------- */
-//      ReiryokuTimer
+//      Timer
 /* ---------------------------------------------------- */
+timer_prevTimeBeforeCount_$category$_$num$ (Array[3])
 timer_re_maxReiryoku
 timer_re_prevReiryokuBeforeCount
 /* =================================================================== */

@@ -401,7 +401,19 @@ function CReiryokuTimer(_category, _num){
     CReiryokuTimer.prototype.buttonClickEventRegist = function(){
         var timer = this;
         return function(){
-            timer.stop();
+            if(timer.state == "stop"){
+                if(localStorage.getItem("timer_re_prevReiryokuBeforeCount")){
+                    timer.reiryoku[0] = Number( localStorage.getItem("timer_re_prevReiryokuBeforeCount") );
+                    if(timer.reiryoku[0] > timer.reiryoku[1]){ 
+                        timer.reiryoku[0] = timer.reiryoku[1];
+                    }
+                    timer.resetRefillTime();
+                    timer.ready();
+                }
+            }
+            else{
+                timer.stop();
+            }
         }
     }
     
@@ -442,12 +454,6 @@ function CReiryokuTimer(_category, _num){
         return function(){
             switch (timer.state) {
             case "stop":
-                if(localStorage.getItem("timer_re_prevReiryokuBeforeCount")){
-                    timer.reiryoku[0] = Number( localStorage.getItem("timer_re_prevReiryokuBeforeCount") );
-                    if(timer.reiryoku[0] > timer.reiryoku[1]){ 
-                        timer.reiryoku[0] = timer.reiryoku[1];
-                    }
-                }
                 timer.resetRefillTime();
                 timer.ready();
                 break;
