@@ -1,128 +1,89 @@
 
-var bFocused = false;
-
-//×ボタン
+// ×ボタン
 document.getElementsByName("close")[0].onclick = function(){
     window.close();
     
-    if(bFocused){
-        chrome.runtime.sendMessage({
-            name: "ShiroproLauncher_Command",
-            command:"focus"
-        }, function(response) {});
-    }
+    // ×ボタンを押したことによりChromeがアクティブとなり、城プロが隠れてしまうことを防止
+    chrome.runtime.sendMessage({ command:"focus" });
 }
 
-//スクショ撮る
+
+// スクショ撮る
 document.getElementsByName("screenShot")[0].onclick = function(){
-    chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
-        command:"focus"
-    }, function(response) {});
-    chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
-        command:"screenShot"
-    }, function(response) {});
-    bFocused = true;
+    chrome.runtime.sendMessage({ command:"screenShot" });
 }
 
 
-//手動タイマー
+// 手動タイマー
 document.getElementsByName("timer")[0].onclick = function(){
-    chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
-        command:"timer"
-    }, function(response) {});
+    chrome.runtime.sendMessage({ command:"timer" });
 }
 
 
-//城プロにフォーカス
+// 城プロにフォーカス
 document.getElementsByName("focus")[0].onclick = function(){
-    chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
-        command:"focus"
-    }, function(response) {});
-    bFocused = true;
+    chrome.runtime.sendMessage({ command:"focus" });
 }
 
 
-//設定
+// 設定
 document.getElementsByName("setting")[0].onclick = function(){
-    var optionsUrl = chrome.extension.getURL("option.html"); 
-    chrome.tabs.create({url:optionsUrl },function(tab){});
+    const optionsUrl = chrome.runtime.getURL("option.html"); 
+    chrome.tabs.create({url:optionsUrl });
 }
 
 
-
-//ウインドウサイズ
-//標準
+// ウインドウサイズ
+// 標準
 document.getElementsByName("size_normal")[0].onclick = function(){
     chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
-        command:"resize",
-    scaleFactor:"1"
-    }, function(response) {});
-    bFocused = true;
+        command:"resizeByScaleFactor",
+        scaleFactor:"1"
+    });
 }
-//大きく
+// 大きく
 document.getElementsByName("size_up")[0].onclick = function(){
     chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
         command:"minorResize",
-    updown:"up"
-    }, function(response) {});
-    bFocused = true;
+        updown:"up"
+    });
 }
-//小さく
+// 小さく
 document.getElementsByName("size_down")[0].onclick = function(){
     chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
         command:"minorResize",
-    updown:"down"
-    }, function(response) {});
-    bFocused = true;
+        updown:"down"
+    });
 }
-//半分
+// 半分
 document.getElementsByName("size_half")[0].onclick = function(){
     chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
-        command:"resize",
-    scaleFactor:"0.5"   
-    }, function(response) {});
-    bFocused = true;
+        command:"resizeByScaleFactor",
+        scaleFactor:"0.5"   
+    });
 }
-//75%
+// 75%
 document.getElementsByName("size_75")[0].onclick = function(){
     chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
-        command:"resize",
-    scaleFactor:"0.75"  
-    }, function(response) {});
-    bFocused = true;
+        command:"resizeByScaleFactor",
+        scaleFactor:"0.75"  
+    });
 }
-//150%
+// 150%
 document.getElementsByName("size_150")[0].onclick = function(){
     chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
-        command:"resize",
-    scaleFactor:"1.5"   
-    }, function(response) {});
-    bFocused = true;
+        command:"resizeByScaleFactor",
+        scaleFactor:"1.5"   
+    });
 }
-//全画面
+// 全画面
 document.getElementsByName("size_full")[0].onclick = function(){
-    chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
-        command:"fullScreen"
-    }, function(response) {});
+    chrome.runtime.sendMessage({ command:"fullScreen" });
 }
 
 
 // 音量
 // ミュート
 document.getElementsByName("sound_mute")[0].onclick = function(){
-    chrome.runtime.sendMessage({
-        name: "ShiroproLauncher_Command",
-        command:"sound_mute"
-    }, function(response) {});
+    chrome.runtime.sendMessage({ command:"sound_mute" });
 }

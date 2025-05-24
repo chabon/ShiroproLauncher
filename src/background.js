@@ -1,95 +1,67 @@
+import { getSetting, getSettings, setSetting } from './settings.js';
+import { ScreenShot } from './screenshot.js';
 
-var ShiroproLauncher = {
+const ShiroproLauncher = {
+    isInitialized: false,
     window : null,
     timerWindow : null,
-    gameSize : {width:1275, height:720},
-    firstWindowSize : {width:1275, height:720},
-    gameUrl : "http://www.dmm.com/netgame/social/-/gadgets/=/app_id=777106/",
-    urlFilters : new Array("app_id=777106", "osapi.dmm.com"),
-
-    isWidgetOpenFromOptionPage : 0, // ウィジェット(desktopLaunchWidget.html)がオプションページから呼ばれたのかどうか
-    widgetWindowId : null
+    gameSize : { width:1275, height:720 },
+    gameUrl : "https://play.games.dmm.com/game/oshirore",
+    urlFilters : ["osapi.dmm.com", "777106"], // onDOMContentLoadedイベントのURLフィルター(or条件)
 };
-
-
-ShiroproLauncher.init = function(){
-    this.loadParameter();
-    this.initEvents();
-    this.initContextmenu();
-    this.initMessage();
-};
-
-
-ShiroproLauncher.loadParameter = function(){
-    this.window = JSON.parse(localStorage.getItem("WindowObj"));
-    this.timerWindow = JSON.parse(localStorage.getItem("TimerWindowObj"));
-}
 
 
 ShiroproLauncher.initEvents = function(){
-    // browserAction onClicked
-    chrome.browserAction.onClicked.addListener(function(tab){
-        chrome.windows.getAll({populate:true}, function(windowList){
-            for(var i=0; i<windowList.length; i++){
-                //is ShiroproWindow exist?
-                if(ShiroproLauncher.window){
-                    if(ShiroproLauncher.window.id == windowList[i].id){ //exist
-                        chrome.windows.update(ShiroproLauncher.window.id, {focused:true}, function(win) {});
-                        return; //for prevent double launch
-                    }
-                }
-                //他のタブで城プロが開かれていないかチェック
-                for(var j=0;j<windowList[i].tabs.length; j++){
-                    if(windowList[i].tabs[j].url.match(ShiroproLauncher.gameUrl)){ 
-                        chrome.tabs.update(windowList[i].tabs[j].id, {highlighted:true}, function(tab){
-                            chrome.windows.update(tab.windowId,{focused:true}, function(){});
-                        });
-                        return;                     
-                    }
-                }
-            }
-            //not exist
-            
-            ShiroproLauncher.window = null; 
-            ShiroproLauncher.createWindow();
-        });
+    // インストール時(拡張機能の更新時、再読み込み時にも呼ばれる)
+    chrome.runtime.onInstalled.addListener(async(details) => {
+        await ShiroproLauncher.initExtension();
     });
-    
 
+    // 拡張機能アイコンクリック時
+    chrome.action.onClicked.addListener(async function(tab) {
+        await ShiroproLauncher.initExtension();
+        await ShiroproLauncher.createWindow();
+    });
   
     // on webNavigation Completed
-    chrome.webNavigation.onDOMContentLoaded.addListener(function(details) {
-        if (ShiroproLauncher.window && details.tabId == ShiroproLauncher.window.tabs[0].id) {
-            ShiroproLauncher.executeScript();
+    chrome.webNavigation.onDOMContentLoaded.addListener(async function(details) {
+        await ShiroproLauncher.initExtension();
+        if (ShiroproLauncher.window?.tabs[0].id == details.tabId) {
+            // ゲームフレームの位置を調整するスクリプトを実行する
+            const tabId = ShiroproLauncher.window.tabs[0].id;
+            chrome.scripting.executeScript({
+              target: { tabId: tabId },
+              files: ["adjustGameFramePos.js"]
+            });
         }
-    }, { url: [
-        {urlContains: ShiroproLauncher.urlFilters[0]},
-        {urlContains: ShiroproLauncher.urlFilters[1]}
-    ]}); //URL filter
-    
+    }, 
+    {
+        url: ShiroproLauncher.urlFilters.map(filter => ({ urlContains: filter })) //URL filter
+    });
+
     // on window removed
-    chrome.windows.onRemoved.addListener(function(windowId){
-        //main window
-        if(ShiroproLauncher.window && ShiroproLauncher.window.id == windowId){
+    chrome.windows.onRemoved.addListener( async function(windowId){
+        await ShiroproLauncher.initExtension();
+        // shiropro window
+        if(ShiroproLauncher.window?.id == windowId){
             ShiroproLauncher.window = null;
-            localStorage.removeItem("WindowObj"); //今のところ保存しておく理由がないので
-            chrome.browserAction.setPopup({popup:""});
+            await setSetting("bg_shiroproWindow", null);
+            chrome.action.setPopup({popup:""});
         }
-        //timer window
-        if(ShiroproLauncher.timerWindow && ShiroproLauncher.timerWindow.id == windowId){
+        // timer window
+        if(ShiroproLauncher.timerWindow?.id == windowId){
             ShiroproLauncher.timerWindow = null;
-            localStorage.removeItem("TimerWindowObj"); //同じく保存しておく理由がない
+            await setSetting("bg_timerWindow", null);
         }
     });
     
-    //on Command
-    chrome.commands.onCommand.addListener(function(command) {
+    // on Command (キーボードショートカット)
+    chrome.commands.onCommand.addListener(async function(command) {
+        console.log("[command executed] command name:", command);
+        await ShiroproLauncher.initExtension();
         switch (command){
         case "ScreenShot":
-            chrome.windows.get(ShiroproLauncher.window.id, {populate:false}, function(win){
-                if(!win.focused){return;} //ShiroproWindow is not active
-                ShiroproLauncher.ScreenShot.take();
-            });
+            ScreenShot.capture(ShiroproLauncher.window?.id, ShiroproLauncher.gameSize);
             break;
         case "OpenTimer":
             ShiroproLauncher.createTimerWindow();
@@ -106,453 +78,378 @@ ShiroproLauncher.initEvents = function(){
     });
     
     //on notifications clicked
-    chrome.notifications.onClicked.addListener(function(){
-        ShiroproLauncher.focusOrOpen();
+    chrome.notifications.onClicked.addListener(async function(){
+        await ShiroproLauncher.initExtension();
+        ShiroproLauncher.focusOrCreateWindow();
     });
+
     //on contextMenus clicked
-    function getClickHandler() {
-        return function(info, tab) {
-            if(info.menuItemId == "openTimer"){ShiroproLauncher.createTimerWindow();}
-        };
-    };
-    chrome.contextMenus.onClicked.addListener(getClickHandler());
+    chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+        await ShiroproLauncher.initExtension();
+        if (info.menuItemId === "openTimer") {
+            await ShiroproLauncher.createTimerWindow();
+        }
+    });
 
-};
+    // ポップアップメニュー、タイマー、scriptとの通信
+    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) { // chrome.runtime.onMessage.addListenerにasync関数は仕様上避けるべき。then構文はok
+        // console.log("[message recieved] ", request);
+        (async () => {
+            await ShiroproLauncher.initExtension(); // 初期化
+            const response = await ShiroproLauncher.handleCommandOnMessage(request, sender);
+            sendResponse(response);
+            // console.log("[message responsed] ", response);
+        })();
+
+        return true; // 非同期レスポンスを返すために必要
+    });
+    
+    // ウインドウ位置とサイズ変更時
+    chrome.windows.onBoundsChanged.addListener(this.onBoundsChangedListener);
+    console.log("[(+)add listener] chrome.windows.onBoundsChanged")
+
+    // end of initEvents
+}
 
 
-ShiroproLauncher.initContextmenu = function(){
-    //remove
-    chrome.contextMenus.removeAll(function(){});
-    //create
-    //EventPageではonclickプロパティでのコールバック関数指定はできない(代わりにchrome.contextMenus.onClicked.addListener)
+ShiroproLauncher.handleCommandOnMessage = async function (request, sender){
+    switch(request.command){
+    case "screenShot":
+        ScreenShot.capture(ShiroproLauncher.window?.id, ShiroproLauncher.gameSize);
+        break;
+    case "focus":
+        if(ShiroproLauncher.window) chrome.windows.update(ShiroproLauncher.window.id, {focused:true});
+        break;
+    case "focusOrCreateWindow":
+        ShiroproLauncher.focusOrCreateWindow();
+        break;
+    case "timer":
+        await ShiroproLauncher.createTimerWindow();
+        break;
+    case "resizeByScaleFactor":
+        ShiroproLauncher.resizeByScaleFactor( parseFloat(request.scaleFactor) );
+        break;
+    case "minorResize":
+        ShiroproLauncher.minorResize(request.updown);
+        break;
+    case "fullScreen":
+        ShiroproLauncher.toggleFullscreen();
+        break;
+    case "getInjectedScriptSettings":
+        const keys = ["opt_win_autoDetectGameFrame", "opt_win_enableScaling", "opt_win_gameCenteringDisabled",
+            "opt_win_scrollValueX", "opt_win_scrollValueY", "opt_win_showExitConfirmation"];
+        return await getSettings(keys);
+    case "getWindowSize":
+        const win = await chrome.windows.get(ShiroproLauncher.window.id, {populate:true});
+        return { width: win.tabs[0].width, height: win.tabs[0].height};
+    case "getWindowId":
+        return { windowId : ShiroproLauncher.window?.id };
+    case "getGameSize":
+        return { gameWidth: ShiroproLauncher.gameSize.width, gameHeight: ShiroproLauncher.gameSize.height};
+    case "setZoom":
+        ShiroproLauncher.setZoom( parseFloat(request.scaleFactor) );
+        break;
+    case "sound_mute":
+        ShiroproLauncher.toggleSoundMute();
+        break;
+    default:
+        break;
+    }
+    return null;
+}
+
+
+ShiroproLauncher.onBoundsChangedListener = async function (win){
+    await ShiroproLauncher.initExtension();
+    // shiropro window
+    if(win.id === ShiroproLauncher.window?.id){
+        const tab = ( await chrome.windows.get(win.id, {populate:true}) ).tabs[0];
+        await setSetting("bg_shiroproWindowPos", { left:win.left, top:win.top });
+        await setSetting("bg_shiroproClientSize", { width:tab.width, height:tab.height });
+    }
+    // timer
+    else if(win.id === ShiroproLauncher.timerWindow?.id){
+        await setSetting("bg_timerWindowRect", {left:win.left, top:win.top, width:win.width, height:win.height});
+    }
+}
+
+
+ShiroproLauncher.initExtension = async function () {
+    if(!this.isInitialized){
+        this.isInitialized = true;
+        await this.loadWindowObjects();
+        await this.initContextMenu();
+        // 管理しているウインドウが無いときは、onBoundsChanged イベントリスナーを削除(不要なServiceWorkerの起動を抑えるため)
+        if(this.window === null && this.timerWindow === null){
+            chrome.windows.onBoundsChanged.removeListener(this.onBoundsChangedListener);
+            console.log("[(-)remove listener] chrome.windows.onBoundsChanged")
+        }
+
+        console.log("[notification] extension initialized");
+    }
+}
+
+
+ShiroproLauncher.loadWindowObjects = async function(){
+    this.window      = await getSetting("bg_shiroproWindow");
+    this.timerWindow = await getSetting("bg_timerWindow");
+}
+
+
+ShiroproLauncher.initContextMenu = function(){
+    chrome.contextMenus.removeAll();
     chrome.contextMenus.create({
         title : "タイマーの起動",
         type : "normal",
         id : "openTimer",
         parentId: null,
-        contexts : ["browser_action"]
+        contexts : ["action"]
     });
 }
 
 
-ShiroproLauncher.toggleFullscreen = function(){
-    if(!ShiroproLauncher.window){return;}
-    chrome.windows.get(ShiroproLauncher.window.id, {populate:false}, function(win){
-        if(win.state != "fullscreen"){
-            chrome.windows.update(ShiroproLauncher.window.id, { state: "fullscreen", focused:true});
-        }
-        else{
-            chrome.windows.update(ShiroproLauncher.window.id, { state: "normal", focused:true });
-        }
-    });
-}
+// 初期位置・クライアントサイズの決定
+ShiroproLauncher.getInitialPosAndClientSize = async function(){
+    // デフォルト値を代入
+    let windowPos  = { left: null, top: null };
+    let clientSize = { width: this.gameSize.width, height: this.gameSize.height }
 
-ShiroproLauncher.toggleSoundMute = function(){
-    if(!ShiroproLauncher.window){return;}
-    chrome.tabs.get(ShiroproLauncher.window.tabs[0].id, function(tab){
-        if(tab.mutedInfo.muted){
-            chrome.tabs.update(ShiroproLauncher.window.tabs[0].id, {muted:false}, function(){});
-        }
-        else{
-            chrome.tabs.update(ShiroproLauncher.window.tabs[0].id, {muted:true}, function(){});
-        }
-    });
-}
-
-ShiroproLauncher.focusOrOpen = function(){
-    if(ShiroproLauncher.window){
-        chrome.windows.update(ShiroproLauncher.window.id, {focused:true}, function(win) {});
-    }else{
-        chrome.windows.getAll({populate:true}, function(windowList){
-            for(var i=0; i<windowList.length; i++){
-                for(var j=0;j<windowList[i].tabs.length; j++){
-                    if(windowList[i].tabs[j].url.match(ShiroproLauncher.gameUrl)){ //既に他のタブで起動している
-                        chrome.tabs.update(windowList[i].tabs[j].id, {highlighted:true}, function(tab){
-                            chrome.windows.update(tab.windowId,{focused:true}, function(){});
-                        });
-                        return;                     
-                    }
-                }
-            }
-            ShiroproLauncher.createWindow();
-        });
+    // ウインドウの位置を記憶する設定の場合
+    if(await getSetting("opt_win_saveShiroproWindowPos")){
+        const prevPos = await getSetting("bg_shiroproWindowPos");
+        windowPos.left = prevPos.left;
+        windowPos.top  = prevPos.top;
     }
-}
 
-
-ShiroproLauncher.executeScript = function(){
-    //! 自動検出する 
-    if(localStorage.getItem("opt_other_autoPos")?JSON.parse(localStorage.getItem("opt_other_autoPos") ):true){
-        //! ウインドウリサイズ時の拡大縮小を有効にする
-        if(localStorage.getItem("opt_other_enableScaling")?JSON.parse(localStorage.getItem("opt_other_enableScaling") ):true){
-            //ウインドウリサイズ時、縦方向への中央化を行うかどうか
-            var additionalCode = "var gameCenteringDisabled = false";
-            if(localStorage.getItem("opt_other_gameCenteringDisabled")?JSON.parse(localStorage.getItem("opt_other_gameCenteringDisabled") ):false){
-                var additionalCode = "var gameCenteringDisabled = true";
-            }
-            //additional code
-            chrome.tabs.executeScript(ShiroproLauncher.window.tabs[0].id, {
-                code: additionalCode
-            }, function(){
-                //main script
-                chrome.tabs.executeScript(ShiroproLauncher.window.tabs[0].id, {
-                    file: "onDOMContentLoaded3.js"
-                }, function(){});
-            });
-        }
-        //! 拡大縮小は無効
-        else{
-            chrome.tabs.executeScript(ShiroproLauncher.window.tabs[0].id, {
-                file: "onDOMContentLoaded1.js"
-            }, function(){});
-        }
-    //! スクロール値を指定して調整する (拡大縮小は無効)
-    }else{
-        var scroll_X = localStorage.getItem("opt_other_scrollValueX")?(localStorage.getItem("opt_other_scrollValueX") ):6;
-        var scroll_Y = localStorage.getItem("opt_other_scrollValueY")?(localStorage.getItem("opt_other_scrollValueY") ):61;
-        chrome.tabs.executeScript(ShiroproLauncher.window.tabs[0].id, {code: "var scrollValue = {x:" +scroll_X+", y:"+scroll_Y+"};"},function(){
-            chrome.tabs.executeScript(ShiroproLauncher.window.tabs[0].id, {file: "onDOMContentLoaded2.js"});                
-        });                             
+    // ウインドウサイズを記憶する設定の場合
+    const prevSize = await getSetting("bg_shiroproClientSize");
+    if( prevSize && (await getSetting("opt_win_saveShiroproClientSize")) ){
+        clientSize.width  = prevSize.width;
+        clientSize.height = prevSize.height;
     }
-}
 
+    // ウインドウ位置を明示的に指定
+    if(await getSetting("opt_win_specifyShiroproWindowPos")){
+        windowPos.left = Number( await getSetting("opt_win_ShiroproWindowPosX") );
+        windowPos.top  = Number( await getSetting("opt_win_ShiroproWindowPosY") );
+    }
 
-ShiroproLauncher.getWindowRectSetting = function(){
-    var rect = {
-        left  : null,
-        top   : null,
-        width : null,
-        height: null
-    }
-    //ウインドウサイズ、位置、設定読み込み
-    if(localStorage.getItem("opt_other_specifyShiroproWindowPos")?
-        JSON.parse(localStorage.getItem("opt_other_specifyShiroproWindowPos") ):false){
-        if(localStorage.getItem("opt_other_ShiroproWindowPosX")){
-            rect.left = Number(localStorage.getItem("opt_other_ShiroproWindowPosX") );
-        }
-        else{rect.left = 100;}
-        if(localStorage.getItem("opt_other_ShiroproWindowPosY")){
-            rect.top = Number(localStorage.getItem("opt_other_ShiroproWindowPosY") );
-        }
-        else{rect.top = 100;}
-    }
-    if(localStorage.getItem("opt_other_specifyShiroproWindowSize")?
-        JSON.parse(localStorage.getItem("opt_other_specifyShiroproWindowSize") ):false){
-            var percentatage = localStorage.getItem("opt_other_ShiroproWindowSize") ? 
-                Number(localStorage.getItem("opt_other_ShiroproWindowSize") ) : 100;
+    // ウインドウサイズを明示的に指定
+    if(await getSetting("opt_win_specifyShiroproWindowSize")){
+            let percentatage = Number( await getSetting("opt_win_ShiroproWindowSize") );
             if(percentatage <= 0){percentatage = 100};
-            this.firstWindowSize.width =  percentatage / 100 * this.gameSize.width;
-            this.firstWindowSize.height = percentatage / 100 * this.gameSize.height;
-    }else{
-        this.firstWindowSize.width = this.gameSize.width;
-        this.firstWindowSize.height = this.gameSize.height;
+            clientSize.width =  percentatage / 100 * this.gameSize.width;
+            clientSize.height = percentatage / 100 * this.gameSize.height;
     }
-    //ウインドウサイズの小数点以下四捨五入
-    this.firstWindowSize.width = Math.round(this.firstWindowSize.width);
-    this.firstWindowSize.height = Math.round(this.firstWindowSize.height);
-    rect.width = this.firstWindowSize.width;
-    rect.height = this.firstWindowSize.height;
 
-    return rect;
+    //ウインドウサイズの小数点以下を丸める
+    clientSize.width  = Math.round(clientSize.width);
+    clientSize.height = Math.round(clientSize.height);
+    
+    return { windowPos, clientSize };
 }
 
 
-ShiroproLauncher.createWindow = function(){
-    var opt = {
-        url : ShiroproLauncher.gameUrl,
-        focused : true,
-        type : 'popup'
-    }
-    var rect = ShiroproLauncher.getWindowRectSetting();
-    opt.left = rect.left;
-    opt.top = rect.top;
-    opt.width = rect.width;
-    opt.height = rect.height;
-    
-    chrome.windows.create(opt, function(newWindow){
-        //keep window obj
-        ShiroproLauncher.window = newWindow;
-        localStorage.setItem("WindowObj", JSON.stringify(newWindow));
-        //init window size (opt.widthの値は枠を含めてるのでズレる)
-        ShiroproLauncher.resizeMainWindow(ShiroproLauncher.firstWindowSize.width, ShiroproLauncher.firstWindowSize.height);
-        //pop up menu
-        if(localStorage.getItem("opt_other_usePopupMenu")?
-        JSON.parse(localStorage.getItem("opt_other_usePopupMenu") ):true){
-           chrome.browserAction.setPopup({popup:"popup.html"});                            
+ShiroproLauncher.createWindow = async function(){
+    // 重複チェック
+    const windowList = await chrome.windows.getAll({ populate: true });
+    for (const win of windowList) {
+        // 城プロランチャーのウインドウがすでに存在しているかチェック
+        if (this.window?.id === win.id) {
+            await chrome.windows.update(win.id, { focused: true });
+            await chrome.action.setPopup({popup:"popup.html"});
+            console.warn("[warning] createWindow() prevented. shiropro window is already exist");
+            return; // 二重起動防止
         }
-        //デスクトップショートカットからの起動だったら、ウィジェット(desktopLaunchWidget.html)を閉じる
-        if(ShiroproLauncher.widgetWindowId){
-            // 消す前に移動(次回デスクトップから起動した時のウィジェットの位置と大きさを、
-            // 城プロウインドウの位置と大きさにするため)
-            var updateInfo = {
-                left:newWindow.left,
-                top:newWindow.top,
-                width:newWindow.width,
-                height:newWindow.height
-            }
-            chrome.windows.update(ShiroproLauncher.widgetWindowId, updateInfo, function(){
-                chrome.windows.remove(ShiroproLauncher.widgetWindowId, function(){
-                    ShiroproLauncher.widgetWindowId = null;
-                });
-            });
-        }
-    });
 
-    //設定によりタイマーも同時起動
-    if(localStorage.getItem("opt_timer_launchSameTime")? 
-    JSON.parse(localStorage.getItem("opt_timer_launchSameTime")):false){
+        // 他のタブで城プロが開かれていないかチェック
+        for (const tabItem of win.tabs) {
+            if (tabItem.url.match(this.gameUrl)) {
+                // 開かれていた場合はそれをフォーカス
+                await chrome.windows.update(tabItem.windowId, { focused: true });
+                await chrome.tabs.update(tabItem.id, { highlighted: true });
+                console.warn("[warning] createWindow() prevented. shiropro tab is already exist");
+                return;
+            }
+        }
+    }
+
+    // 初期ウインドウサイズ・位置
+    const { windowPos, clientSize } = await this.getInitialPosAndClientSize();
+    
+    // 作成
+    this.window = null;
+    const opt = {
+        url     : this.gameUrl,
+        focused : true,
+        type    : 'popup',
+        left    : windowPos.left,
+        top     : windowPos.top,
+        width   : clientSize.width, // 正確ではないがとりあえず指定。resizeWindow()で正しく初期化される
+        height  : clientSize.height // "
+    }
+    const newWindow = await chrome.windows.create(opt);
+
+    // 城プロのウインドウオブジェクトをキープ
+    this.window = newWindow;
+    setSetting("bg_shiroproWindow", newWindow);
+
+    // クライアントサイズ初期化
+    this.resizeWindow(clientSize.width, clientSize.height);
+
+    // ポップアップメニュー
+    await chrome.action.setPopup({popup:"popup.html"});
+
+    // ウインドウ位置とサイズ変更時、その値を保存する
+    chrome.windows.onBoundsChanged.addListener(this.onBoundsChangedListener);
+    console.log("[(+)add listener] chrome.windows.onBoundsChanged")
+
+    // 設定によりタイマーも同時起動
+    if(await getSetting("opt_timer_launchSameTime")){
        this.createTimerWindow();
     }
-
 };
 
 
-ShiroproLauncher.createTimerWindow = function(){
-    var createTimer =function(){
-        var timerRect = localStorage.getItem("TimerRect")?
-        JSON.parse(localStorage.getItem("TimerRect")) :{left:0, top:0, width:173, height:273};
-        var opt = {
-            url : "timer.html",
-            focused : false,
-            type : 'popup',
-            width : timerRect.width,
-            height : timerRect.height
+ShiroproLauncher.createTimerWindow = async function(){
+    // 重複チェック
+    const windowList = await chrome.windows.getAll({ populate: true });
+    for (const win of windowList) {
+        if (this.timerWindow?.id === win.id) {
+            await chrome.windows.update(ShiroproLauncher.timerWindow.id, {focused:true});
+            return; // 二重起動防止
         }
-        if(localStorage.getItem("opt_timer_savePos")?
-        JSON.parse(localStorage.getItem("opt_timer_savePos")) :true ){
-            if(localStorage.getItem("TimerRect")){
-                opt.left = timerRect.left;
-                opt.top = timerRect.top;
-            }
-        }
-        chrome.windows.create(opt,function(newWindow){
-            ShiroproLauncher.timerWindow = newWindow;
-            localStorage.setItem("TimerWindowObj", JSON.stringify(newWindow));
-        });
     }
-    //タイマーの起動(二重起動は防止)
-    if(ShiroproLauncher.timerWindow){
-        chrome.windows.getAll({populate:false}, function(windowList){
-            for(var i=0; i<windowList.length; i++){
-                if(ShiroproLauncher.timerWindow.id == windowList[i].id){ //exist
-                    chrome.windows.update(ShiroproLauncher.timerWindow.id, {focused:true}, function(win) {});
-                    return; //for prevent double launch
-                }
-            }
-            //not exist
-            ShiroproLauncher.timerWindow = null; 
-            createTimer();
-        });
+
+    // パラメータ
+    const prevRect  = await getSetting("bg_timerWindowRect");
+    const opt = {
+        url     : "timer.html",
+        focused : false,
+        type    : 'popup',
+        width   : prevRect.width,
+        height  : prevRect.height
     }
-    else{ createTimer();} //not exist
+    if(await getSetting("opt_timer_savePos")){
+        opt.left   = prevRect.left;
+        opt.top    = prevRect.top;
+    }
+
+    // 作成
+    const newTimerWindow = await chrome.windows.create(opt);
+    this.timerWindow = newTimerWindow;
+    await setSetting("bg_timerWindow", newTimerWindow);
+    await chrome.windows.update(newTimerWindow.id, {focused:true});
+
+    // ウインドウ位置とサイズ変更時、その値を保存する
+    chrome.windows.onBoundsChanged.addListener(this.onBoundsChangedListener);
+    console.log("[(+)add listener] chrome.windows.onBoundsChanged")
 }
 
 
-ShiroproLauncher.resizeMainWindow = function(_width, _height){
-    if(!ShiroproLauncher.window){return;}
-    chrome.windows.get(ShiroproLauncher.window.id, {populate:true}, function(win){
-        chrome.windows.update(win.id,{
-            width : Math.floor( _width) + (win.width - win.tabs[0].width),
-            height : Math.floor( _height) + (win.height - win.tabs[0].height),
-            focused : true
-        },function(w){});
+ShiroproLauncher.resizeWindow = async function(width, height){ // widthとheightはクライアント領域のサイズ(枠含めない)
+    if(!this.window) return;
+    let win = await chrome.windows.get(this.window.id, {populate:true});
+    await chrome.windows.update(win.id,{
+        width   : Math.floor(width)  + (win.width  - win.tabs[0].width),
+        height  : Math.floor(height) + (win.height - win.tabs[0].height),
+        focused : true
     });
 }
 
 
-//ポップアップメニュー、タイマー、content scriptとの通信
-ShiroproLauncher.initMessage = function(){
-    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-        if (request.name === "ShiroproLauncher_Command") {
-            switch(request.command){
-            case "test":
-                alert("request recieved");
-                break;
-            case "screenShot":
-                ShiroproLauncher.ScreenShot.take();
-                break;
-            case "focus":
-                chrome.windows.update(ShiroproLauncher.window.id, {focused:true}, function(win) {});
-                break;
-            case "focusOrOpen":
-                ShiroproLauncher.focusOrOpen();
-                break;
-            case "timer":
-                ShiroproLauncher.createTimerWindow();
-                break;
-            case "saveTimerPos":
-                if(ShiroproLauncher.timerWindow){
-                    chrome.windows.get(ShiroproLauncher.timerWindow.id, {populate:false},function(win){
-                        var timerRect = {left:win.left, top:win.top, width:win.width, height:win.height};
-                        localStorage.setItem("TimerRect", JSON.stringify(timerRect));
-                    });
-                }
-                break;
-            case "resize":
-                if(!ShiroproLauncher.window){break;}
-                scaleFactor = parseFloat( request.scaleFactor );
-                var width = ShiroproLauncher.gameSize.width * scaleFactor;
-                var height = ShiroproLauncher.gameSize.height * scaleFactor;
-                ShiroproLauncher.resizeMainWindow(width, height);
-                break;
-            case "minorResize":
-                if(!ShiroproLauncher.window){break;}
-                chrome.windows.get(ShiroproLauncher.window.id, {populate:true}, function(win){
-                    var gameAspectRaito = ShiroproLauncher.gameSize.height / ShiroproLauncher.gameSize.width;
-                    var clientAspectRaito = win.tabs[0].height /win.tabs[0].width;
-                    var unitWidth =  ShiroproLauncher.gameSize.width / 10;
-                    var unitHeight = ShiroproLauncher.gameSize.height / 10;
-                    var width, height;
-                    var incParam;
-                    
-                    if(clientAspectRaito > gameAspectRaito){
-                        if(request.updown == "up"){incParam = unitWidth;}
-                        else {incParam = - unitWidth}
-                        width = Math.ceil( win.tabs[0].width / unitWidth ) * unitWidth + incParam;
-                        height = width * gameAspectRaito;
-                    }else{
-                        if(request.updown == "up"){incParam = unitHeight;}
-                        else {incParam = - unitHeight}
-                        height = Math.ceil( win.tabs[0].height / unitHeight ) * unitHeight + incParam;
-                        width = height / gameAspectRaito;
-                    }
-                    if(width <= 0 || height <= 0){return;}
-                    ShiroproLauncher.resizeMainWindow(width, height);
-                });
-                break;
-            case "fullScreen":
-                ShiroproLauncher.toggleFullscreen();
-                break;
-            case "getWindowSize":
-                chrome.windows.get(ShiroproLauncher.window.id, {populate:true},function(win){
-                    sendResponse({ width: win.tabs[0].width, height: win.tabs[0].height});
-                });
-                return true;
-            case "resizeForKeepAspectRato":
-                break;
-            case "setZoom":
-                chrome.windows.get(ShiroproLauncher.window.id, {populate:true},function(win){
-                    scaleFactor = parseFloat( request.scaleFactor );
-                    chrome.tabs.getZoom(win.tabs[0].id, function(zoomFactor){
-                        // 変更前後の拡大率が同じなら処理しない
-                        if (scaleFactor == zoomFactor) {
-                            sendResponse();
-                            return true;
-                        }
-                        // 拡大率の更新
-                        chrome.tabs.setZoom(win.tabs[0].id , scaleFactor, function(){ 
-                            sendResponse();
-                        });
-                    });
-                    
-                });
-                return true;
-            case "fireResizeEvent":
-                // リサイズイベントを意図的に発生させる(setTimeoutで遅延実行。未使用)
-                setTimeout(function(){
-                    ShiroproLauncher.resizeMainWindow(ShiroproLauncher.window.width-1, ShiroproLauncher.window.height-1);
-                    ShiroproLauncher.resizeMainWindow(ShiroproLauncher.window.width, ShiroproLauncher.window.height);
-                },1000); 
-                return true;
-            case "localStorage_GetItem":
-                var key = request.key;
-                var _value = true;
-                var _result = "";
-                if(localStorage.getItem(key)){
-                     _value = localStorage.getItem(key);
-                     _result = true;
-                }
-                else{
-                    _result = false;
-                }
-                sendResponse({ value:_value, result:_result});
-                break;
-            case "navigateToGamePageFromDesktopShortcutWidget":
-                // オプションページから呼ばれたのかチェック
-                if(ShiroproLauncher.isWidgetOpenFromOptionPage){ 
-                    ShiroproLauncher.isWidgetOpenFromOptionPage = 0; // 初期化
-                    sendResponse({isOpenFromOptionPage:1});
-                    break; 
-                }
+ShiroproLauncher.resizeByScaleFactor = async function(scaleFactor){
+    const width  = this.gameSize.width  * scaleFactor;
+    const height = this.gameSize.height * scaleFactor;
+    await this.resizeWindow(width, height);
+}
 
-                // alert("オプション以外から開かれた");
-                
-                // urlがウィジェットのものであるか一応チェック
-                chrome.windows.getCurrent({populate:true}, function(win){
-                    // 移動前チェック 
-                    chrome.windows.getAll({populate:true}, function(windowList){
-                        for(var i=0; i<windowList.length; i++){
-                            //is ShiroproWindow exist?
-                            if(ShiroproLauncher.window){
-                                if(ShiroproLauncher.window.id == windowList[i].id){ //exist
-                                    chrome.windows.update(ShiroproLauncher.window.id, {focused:true}, function(win) {});
-                                    chrome.windows.remove(win.id, function(){}); // 城プロが既に存在していたのでウィジェットを閉じる
-                                    return; //for prevent double launch
-                                }
-                            }
-                            //他のタブで城プロが開かれていないかチェック
-                            for(var j=0;j<windowList[i].tabs.length; j++){
-                                if(windowList[i].tabs[j].url.match(ShiroproLauncher.gameUrl)){ 
-                                    chrome.tabs.update(windowList[i].tabs[j].id, {highlighted:true}, function(tab){
-                                        chrome.windows.update(tab.windowId,{focused:true}, function(){});
-                                    });
-                                    chrome.windows.remove(win.id, function(){});
-                                    return;                     
-                                }
-                            }
-                        }
-                        //not exist
-                        ShiroproLauncher.window = null; 
-                        ShiroproLauncher.widgetWindowId = win.id;
 
-                        // 結局URL遷移後のアドレスバーを消す方法がなかったので、新しくウインドウを作成
-                        ShiroproLauncher.createWindow();
-                    });
-                    
-                });
-                
-                break;
-            case "setParam_isWidgetOpenFromOptionPage":
-                ShiroproLauncher.isWidgetOpenFromOptionPage = 1;
-                sendResponse();
-                 break;
-            case "sound_mute":
-                ShiroproLauncher.toggleSoundMute();
-                break;
-            default:
-                break;
-            }
-        }
-    });
+ShiroproLauncher.minorResize = async function(updown){
+    // ウインドウ情報を取得（タブ情報も含める）
+    if(!this.window) return;
+    const win = await chrome.windows.get(this.window.id, { populate: true });
+    const tab = win.tabs[0];
+
+    // ゲームと現在のクライアントウインドウのアスペクト比を取得
+    const gameAspectRatio   = this.gameSize.height / this.gameSize.width;
+    const clientAspectRatio = tab.height / tab.width;
+
+    // リサイズの最小単位（ゲームサイズの10分の1）
+    const unitWidth  = this.gameSize.width  / 10;
+    const unitHeight = this.gameSize.height / 10;
+
+    // up/down の判定
+    const isUp = updown === "up";
+
+    let width, height;
+    if (clientAspectRatio > gameAspectRatio) { //ウインドウサイズが横に長い時
+        // 横を基準に調整する
+        const baseWidth = Math.ceil(tab.width / unitWidth) * unitWidth;
+        width = baseWidth + (isUp ? unitWidth : -unitWidth);
+        height = width * gameAspectRatio;
+    } else { // ウインドウサイズが横に長い時
+        // 縦を基準に調整する
+        const baseHeight = Math.ceil(tab.height / unitHeight) * unitHeight;
+        height = baseHeight + (isUp ? unitHeight : -unitHeight);
+        width = height / gameAspectRatio;
+    }
+
+    // 無効なサイズは無視
+    if (width <= 0 || height <= 0) return;
+
+    // ウインドウサイズを更新
+    this.resizeWindow(width, height);
+}
+
+
+ShiroproLauncher.setZoom = async function(scaleFactor){
+    const win = await chrome.windows.get(ShiroproLauncher.window.id, { populate: true });
+    const tabId = win.tabs[0].id;
+    const prevScaleFactor = await chrome.tabs.getZoom(tabId);
+
+    // 変更前後の拡大率が同じなら処理しない
+    if (scaleFactor === prevScaleFactor) {
+        return;
+    }
+    // 拡大率の更新
+    await chrome.tabs.setZoom(tabId, scaleFactor);
+}
+
+
+ShiroproLauncher.toggleFullscreen = async function(){
+    if(!this.window) return;
+    const win = await chrome.windows.get(this.window.id, {populate:false});
+    if(win.state != "fullscreen"){
+        await chrome.windows.update(this.window.id, { state: "fullscreen", focused:true});
+    }
+    else{
+        await chrome.windows.update(this.window.id, { state: "normal", focused:true });
+    }
+}
+
+
+ShiroproLauncher.toggleSoundMute = async function(){
+    if(!this.window) return;
+    const tab = await chrome.tabs.get(this.window.tabs[0].id);
+    if(tab.mutedInfo.muted){
+        await chrome.tabs.update(tab.id, {muted:false});
+    }
+    else{
+        await chrome.tabs.update(tab.id, {muted:true});
+    }
+}
+
+
+ShiroproLauncher.focusOrCreateWindow = async function(){
+    if(this.window){
+        await chrome.windows.update(this.window.id, {focused:true});
+    }else{
+        await ShiroproLauncher.createWindow();
+    }
 }
 
 
 
-chrome.runtime.onInstalled.addListener(function(){
-    //ver1.6.0→ver1.6.1
-    if(localStorage.getItem("opt_timer_soundEnable")){
-        if(JSON.parse(localStorage.getItem("opt_timer_soundEnable") )){
-            localStorage.setItem("opt_timer_soundEnable_t", JSON.stringify(true));
-            localStorage.setItem("opt_timer_soundEnable_s", JSON.stringify(true));
-            localStorage.setItem("opt_timer_soundEnable_c", JSON.stringify(true));
-            localStorage.setItem("opt_timer_soundEnable_h", JSON.stringify(true));
-        }
-        else{
-            localStorage.setItem("opt_timer_soundEnable_t", JSON.stringify(false));
-            localStorage.setItem("opt_timer_soundEnable_s", JSON.stringify(false));
-            localStorage.setItem("opt_timer_soundEnable_c", JSON.stringify(false));
-            localStorage.setItem("opt_timer_soundEnable_h", JSON.stringify(false));
-        }
-        localStorage.removeItem("opt_timer_soundEnable");
-    }
-    // remove window object of localStorage
-    localStorage.removeItem("WindowObj");
-    localStorage.removeItem("TimerWindowObj");
-});
-
-
-
-ShiroproLauncher.init();
-
-
+ShiroproLauncher.initEvents();
 

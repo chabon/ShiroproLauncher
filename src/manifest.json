@@ -1,14 +1,11 @@
 {
   "name": "城プロランチャー",
   "version": "1.8.9",
-  "manifest_version": 2,
+  "manifest_version": 3,
   "description": "御城プロジェクトをぴったりサイズの別窓で起動します",
   "background":{
-  	"scripts": [ 
-  	"background.js",
-  	"screenShot.js" 
-  	],
-  	"persistent": false
+    "service_worker": "background.js",
+    "type": "module"
   },
   "icons": {
     "16" : "images/ShiroproLauncher_16.png",
@@ -16,7 +13,7 @@
     "32" : "images/ShiroproLauncher_32.png",
     "48" : "images/ShiroproLauncher_48.png"
   },
-  "browser_action": {
+  "action": {
         "default_icon": "images/ShiroproLauncher_19.png"
    },
    "permissions": [
@@ -25,6 +22,10 @@
     "downloads",
     "notifications",
     "contextMenus",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
     "<all_urls>"
   ],
   "commands": {
@@ -49,5 +50,8 @@
       "description": "音声をミュート"
     }
   },
-  "options_page": "option.html"
+  "options_page": "option.html",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  }
 }
